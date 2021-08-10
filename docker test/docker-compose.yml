@@ -1,0 +1,92 @@
+version : '3.7'
+services :
+    elasticsearch:
+        image: elasticsearch:7.9.2
+        ports: 
+            - '9200:9200'
+            - "9300:9300"
+        environment: 
+            - discovery.type=single-node
+            - network.host=0.0.0.0
+            - http.host=0.0.0.0
+        networks:
+            - elastic    
+            
+        ulimits: 
+            memlock: 
+                soft: -1
+                hard: -1
+    node-elastic: 
+        image: node-elastic
+        environment:
+            - ELASTIC_HOST=http://elasticsearch:9200
+           
+        ports: 
+            - "3000:3000"
+        networks:
+            - elastic     
+            
+        depends_on:
+            - elasticsearch 
+        restart: on-failure    
+
+        
+    postgres:
+        image: postgres
+        environment:
+                  - POSTGRES_PASSWORD=postgres
+                  - POSTGRES_USER=postgres
+                  - POSTGRES_DB=
+        volumes:
+                  - ./postgres-data:/var/lib/postgresql/data           
+        ports:
+                  - 5432:5432
+        networks:
+                - elastic           
+       
+    pgadmin4:
+        image : dpage/pgadmin4
+        
+        environment: 
+            PGADMIN_DEFAULT_EMAIL: "abdo@gmail.com"
+            PGADMIN_DEFAULT_PASSWORD: "abdo"     
+        ports:
+            - "80:80"
+        networks:
+            - elastic     
+        depends_on: 
+            - postgres           
+    logstash: 
+        image: logstash:7.9.2
+        environment:
+            - LOGSTASH_JDBC_URL=jdbc:postgresql://postgres:5432/test1
+            - LOGSTASH_JDBC_DRIVER=org.postgresql.Driver
+            - LOGSTASH_JDBC_DRIVER_JAR_LOCATION=/usr/share/logstash/logstash-core/lib/jars/postgresql.jar
+            - LOGSTASH_JDBC_USERNAME=postgres
+            - LOGSTASH_JDBC_PASSWORD=postgres
+            - LOGSTASH_ELASTICSEARCH_HOST=http://elasticsearch:9200
+        
+        volumes: 
+            - ./logstashconfig/logstash.yml:/usr/share/logstash/config/logstash.yml
+            - ./logstashconfig/pipelines.yml:/usr/share/logstash/config/pipelines.yml
+            - ./filesconfig/:/usr/share/logstash/pipeline/
+            - ./jars/postgresql-42.2.22.jar:/usr/share/logstash/logstash-core/lib/jars/postgresql-42.2.22.jar
+                       
+                # - type: bind
+                #   source: ./logstashconfig/
+                #   target: /usr/share/logstash/pipeline/ 
+                # - type: bind
+                #   #can be either a host path or volume name.
+                #   source: ./logstashconfig/piplines.yml
+                #   #is the container path where the volume is mounted
+                #   target: /usr/share/logstash/pipeline/piplines.yml
+                #   read_only: true
+        networks:
+            - elastic         
+            
+        depends_on: 
+            - postgres 
+            - elasticsearch  
+networks:
+    elastic:                            
+            

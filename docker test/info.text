@@ -1,0 +1,57 @@
+http://192.168.43.229:9200
+
+volumes:
+            - ./postgres-data:/var/lib/postgresql/data 
+
+
+            environment:
+                  - LOGSTASH_JDBC_URL=jdbc:postgresql://postgres:5432/test1
+                  - LOGSTASH_JDBC_DRIVER=org.postgresql.Driver
+                  - LOGSTASH_JDBC_DRIVER_JAR_LOCATION=/usr/share/logstash/logstash-core/lib/jars/postgresql.jar
+                  - LOGSTASH_JDBC_USERNAME=postgres
+                  - LOGSTASH_JDBC_PASSWORD=postgres
+                  - LOGSTASH_ELASTICSEARCH_HOST=http://elasticsearch:9200
+
+
+
+
+                  logstash: 
+        image: logstash:7.13.4
+        environment:
+            - LOGSTASH_JDBC_URL=jdbc:postgresql://postgres:5432/test1
+            - LOGSTASH_JDBC_DRIVER=org.postgresql.Driver
+            - LOGSTASH_JDBC_DRIVER_JAR_LOCATION=/usr/share/logstash/logstash-core/lib/jars/postgresql.jar
+            - LOGSTASH_JDBC_USERNAME=postgres
+            - LOGSTASH_JDBC_PASSWORD=postgres
+            - LOGSTASH_ELASTICSEARCH_HOST=http://elasticsearch:9200
+        volumes: 
+            - ./logstashconfig/logstash.yml:/usr/share/logstash/config/logstash.yml
+            - ./logstashconfig/:/usr/share/logstash/pipeline/
+            - ./filesconfig/:/usr/share/logstash/pipeline/
+            - ./jars/postgresql-42.2.22.jar:/usr/share/logstash/logstash-core/lib/jars/postgresql-42.2.22.jar
+                       
+                # - type: bind
+                #   source: ./logstashconfig/
+                #   target: /usr/share/logstash/pipeline/ 
+                # - type: bind
+                #   #can be either a host path or volume name.
+                #   source: ./logstashconfig/piplines.yml
+                #   #is the container path where the volume is mounted
+                #   target: /usr/share/logstash/pipeline/piplines.yml
+                #   read_only: true
+    
+        ports:
+                    - "5044:5044"
+                    - "5000:5000"
+                    - "9600:9600"
+        
+        depends_on: 
+            - postgres 
+            - elasticsearch      
+
+
+
+ docker exec -it 70c17496ec2a  bash     
+
+ 70c17496ec2a                  
+            
